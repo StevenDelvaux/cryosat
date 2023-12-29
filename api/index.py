@@ -46,7 +46,7 @@ def plotDate(isAnomaly):
 	plotType = 'anomaly' if isAnomaly else 'thickness'
 	storedFileName = 'data/' + plotType + '/' + str(date.year) + '/cryosat-smos-thickness' + ('-anomaly-' if isAnomaly else '-') + dateString.replace('-', '') + '.png'
 	if os.path.isfile(storedFileName):
-		copiedFileName = 'tmp/storedfile.png'
+		copiedFileName = '/tmp/storedfile.png'
 		shutil.copyfile(storedFileName, copiedFileName)
 		return send_file(copiedFileName, mimetype='image/png')
 	
@@ -76,7 +76,7 @@ def plotDate(isAnomaly):
 		landmask = interpolate(landmask, dummyvalue, False, thicknessmax, anomalymax)
 
 		plotTitle = "CryoSat-SMOS sea ice thickness " + str(date.day) + " " + monthNames[date.month-1] + " " + str(date.year)
-		filename = 'tmp/cryosat-smos-thickness.png'
+		filename = '/tmp/cryosat-smos-thickness.png'
 		plotThickness(landmask, plotTitle, filename, thicknessmax)
 		
 	else:
@@ -100,7 +100,7 @@ def plotDate(isAnomaly):
 
 		print(date.day)
 		plotTitle = "CryoSat-SMOS thickness anomaly " + str(date.day) + " " + monthNames[date.month-1] + " " + str(date.year) + " vs 2013-2022"
-		filename = 'tmp/cryosat-smos-thickness-anomaly.png'
+		filename = '/tmp/cryosat-smos-thickness-anomaly.png'
 		plotAnomaly(landmask, plotTitle, filename, anomalymax)
 	
 	return send_file(filename, mimetype='image/png')
@@ -129,7 +129,7 @@ def download(date, useRevised = False):
 	filename = getFileName(date, useRevised)
 	ftpSubfolder = (str(date.year) + "/" + padzeros(date.month)) if (useRevised or date.year < 2023 or date.year == 2023 and date.month < 6) else 'LATEST'
 	fullFtpPath = ftpFolder + ftpSubfolder + "/" + filename.replace(',','%2C')
-	localpath = 'tmp/gridded-file.nc'
+	localpath = '/tmp/gridded-file.nc'
 	print('downloading file ', fullFtpPath)
 	with closing(urllib.request.urlopen(fullFtpPath)) as r:
 		with open(localpath, 'wb') as f:
