@@ -46,11 +46,17 @@ def plotDate(isAnomaly):
 	plotType = 'anomaly' if isAnomaly else 'thickness'
 	storedFileName = 'data/' + plotType + '/' + str(date.year) + '/cryosat-smos-thickness' + ('-anomaly-' if isAnomaly else '-') + dateString.replace('-', '') + '.png'
 	if os.path.isfile(storedFileName):
-		copiedFileName = '/tmp/storedfile.png'
+		copiedFileName = 'tmp/storedfile.png'
 		shutil.copyfile(storedFileName, copiedFileName)
 		return send_file(copiedFileName, mimetype='image/png')
-		
-	downloadedFileName = download(date)
+	
+	try:
+		downloadedFileName = download(date)
+	except:
+		if date.year > 2023 or date.year == 2023 and date.month > 6:
+			downloadedFileName = download(date, True)
+		else:
+			raise
 	
 	lat = np.loadtxt(open("lat.csv", "rb"), delimiter=",", skiprows=0)
 	lon = np.loadtxt(open("lon.csv", "rb"), delimiter=",", skiprows=0)
@@ -70,7 +76,7 @@ def plotDate(isAnomaly):
 		landmask = interpolate(landmask, dummyvalue, False, thicknessmax, anomalymax)
 
 		plotTitle = "CryoSat-SMOS sea ice thickness " + str(date.day) + " " + monthNames[date.month-1] + " " + str(date.year)
-		filename = '/tmp/cryosat-smos-thickness.png'
+		filename = 'tmp/cryosat-smos-thickness.png'
 		plotThickness(landmask, plotTitle, filename, thicknessmax)
 		
 	else:
@@ -94,7 +100,7 @@ def plotDate(isAnomaly):
 
 		print(date.day)
 		plotTitle = "CryoSat-SMOS thickness anomaly " + str(date.day) + " " + monthNames[date.month-1] + " " + str(date.year) + " vs 2013-2022"
-		filename = '/tmp/cryosat-smos-thickness-anomaly.png'
+		filename = 'tmp/cryosat-smos-thickness-anomaly.png'
 		plotAnomaly(landmask, plotTitle, filename, anomalymax)
 	
 	return send_file(filename, mimetype='image/png')
@@ -105,10 +111,10 @@ def padzeros(n):
     """
 	return str(n) if n >= 10 else '0'+str(n)
 
-def getFileName(date):
+def getFileName(date, useRevised):
 	startDate = date - timedelta(days = 3)
 	endDate = date + timedelta(days = 3)
-	return 'W_XX-ESA,SMOS_CS2,NH_25KM_EASE2_' + str(startDate.year) + padzeros(startDate.month) + padzeros(startDate.day)+ '_' + str(endDate.year) + padzeros(endDate.month) + padzeros(endDate.day) + '_' + ('r' if date.year < 2023 or date.year == 2023 and date.month < 6 else 'o') + '_v206_01_l4sit.nc'
+	return 'W_XX-ESA,SMOS_CS2,NH_25KM_EASE2_' + str(startDate.year) + padzeros(startDate.month) + padzeros(startDate.day)+ '_' + str(endDate.year) + padzeros(endDate.month) + padzeros(endDate.day) + '_' + ('r' if useRevised or date.year < 2023 or date.year == 2023 and date.month < 6 else 'o') + '_v206_01_l4sit.nc'
 	
 def getGriddedThickness(filename):
 	f = Dataset(filename, 'r', format="NETCDF4")
@@ -116,14 +122,14 @@ def getGriddedThickness(filename):
 	f.close()
 	return thicknessData
 	
-def download(date):
+def download(date, useRevised = False):
 	"""
 	Download Cryosat-SMOS ftp file. 
     """
-	filename = getFileName(date)
-	ftpSubfolder = (str(date.year) + "/" + padzeros(date.month)) if (date.year < 2023 or date.year == 2023 and date.month < 6) else 'LATEST'
+	filename = getFileName(date, useRevised)
+	ftpSubfolder = (str(date.year) + "/" + padzeros(date.month)) if (useRevised or date.year < 2023 or date.year == 2023 and date.month < 6) else 'LATEST'
 	fullFtpPath = ftpFolder + ftpSubfolder + "/" + filename.replace(',','%2C')
-	localpath = '/tmp/gridded-file.nc'
+	localpath = 'tmp/gridded-file.nc'
 	print('downloading file ', fullFtpPath)
 	with closing(urllib.request.urlopen(fullFtpPath)) as r:
 		with open(localpath, 'wb') as f:
@@ -381,7 +387,6 @@ def plotThickness(landmask, plotTitle, filename, thicknessmax):
 	plt.savefig(filename)
 		
 def plotAnomaly(landmask, plotTitle, filename, anomalymax):
-	print('inside plot piomas', filename)
 	cdict = {'red': ((0.0,  0.4, 0.4),
          	       (0.001, 0.0, 0.0),
          	       #(0.4, 0.8, 0.8),
