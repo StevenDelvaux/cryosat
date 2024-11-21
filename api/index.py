@@ -62,7 +62,7 @@ def plotDate(isAnomaly):
 	lon = np.loadtxt(open("lon.csv", "rb"), delimiter=",", skiprows=0)
 	dummyvalue=10
 	
-	thicknessmax = 5.0 # 5 meters
+	thicknessmax = 4.0 # 4 meters
 	anomalymax = 1.0 # 1 meter
 	anomyears = 10 # 10 years in anomaly base
 
